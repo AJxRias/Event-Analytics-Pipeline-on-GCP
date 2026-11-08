@@ -11,6 +11,33 @@ bash scripts/run_local.sh            # mock API -> ETL -> warehouse -> 12 SQL re
 
 ---
 
+## Deployed on Google Cloud
+
+The pipeline runs in GCP (`asia-south1`, Mumbai): the mock vendor API as a Cloud Run service, the ETL as a Cloud Run job triggered nightly at 02:30 IST by Cloud Scheduler, and the warehouse in BigQuery.
+
+**Cloud Run: the API service and the pipeline job**
+
+![Cloud Run overview](docs/images/cloud_run_overview.png)
+
+**A successful pipeline execution**
+
+![Cloud Run job succeeded](docs/images/cloud_run_job_succeeded.png)
+
+**All 12 analysis queries running against BigQuery**, with the bytes each one processed
+
+![Queries on BigQuery](docs/images/bigquery_queries.png)
+
+### What broke on the way to production (and the fixes)
+
+| Symptom | Root cause | Fix |
+|---|---|---|
+| `gcloud builds submit` → 403 `storage.objects.get` | New projects run Cloud Build as the default compute service account, which starts with no permissions | Setup grants it `roles/cloudbuild.builds.builder` |
+| Job failed on the first API call | The API loaded its 107 MB source file on the first request; on a cold Cloud Run instance that exceeded the client's 30 s timeout, and timeouts weren't retried | Load data at startup before accepting traffic, keep raw JSON lines to cut memory, retry timeouts with a 120 s limit |
+| `InvalidHeader` on the API key | `openssl rand` output ends in `\n`, so the secret contained a newline | Strip secrets when read; create them without the newline |
+| BigQuery `Field error has changed type from STRING to INTEGER` | On a successful run the `error` column was all null, so its type was inferred as INTEGER | Explicit column types for the run-log tables |
+
+---
+
 ## Architecture
 
 ```mermaid
