@@ -23,6 +23,10 @@ The pipeline runs in GCP (`asia-south1`, Mumbai): the mock vendor API as a Cloud
 
 ![Cloud Run job succeeded](docs/images/cloud_run_job_succeeded.png)
 
+**Cloud Scheduler triggering the job nightly at 02:30 IST**
+
+![Cloud Scheduler nightly trigger](docs/images/cloud_scheduler_nightly.png)
+
 **All 12 analysis queries running against BigQuery**, with the bytes each one processed
 
 ![Queries on BigQuery](docs/images/bigquery_queries.png)
