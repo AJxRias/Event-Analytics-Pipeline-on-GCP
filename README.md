@@ -137,7 +137,7 @@ bash deploy/deploy.sh                      # build, upload data, deploy API + jo
 PIPELINE_TARGET=bigquery python scripts/run_queries.py
 ```
 
-`deploy.sh` builds the image with Cloud Build into Artifact Registry, uploads the raw exports to the GCS landing zone, deploys the mock vendor API as a Cloud Run service, deploys the pipeline as a Cloud Run job with secrets from Secret Manager, and schedules it nightly at 02:30 IST with Cloud Scheduler. The service account only gets BigQuery job user, data editor on this one dataset, object admin on this one bucket, and secret access.
+`deploy.sh` builds the image with Cloud Build into Artifact Registry, uploads the raw exports to the GCS landing zone, deploys the mock vendor API as a Cloud Run service, deploys the pipeline as a Cloud Run job with secrets from Secret Manager, and schedules it nightly at 02:30 IST with Cloud Scheduler. The pipeline service account gets BigQuery job user and data editor, object admin on this one bucket only, and secret access. Setup also gives the default compute service account the Cloud Build builder role, which new projects need before `gcloud builds submit` works.
 
 ## Project structure
 

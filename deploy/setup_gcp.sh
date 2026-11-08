@@ -30,13 +30,24 @@ gcloud storage buckets update "gs://$BUCKET" --lifecycle-file=/tmp/lifecycle.jso
 echo "==> BigQuery dataset $DATASET"
 bq --location="$REGION" mk --dataset --description "Exhibition analytics warehouse" "$GCP_PROJECT:$DATASET" 2>/dev/null || echo "   (exists)"
 
-echo "==> service account $SA (least privilege)"
+echo "==> service account $SA"
 gcloud iam service-accounts create "$SA_NAME" --display-name="Event analytics pipeline" 2>/dev/null || echo "   (exists)"
-for role in roles/bigquery.jobUser roles/run.invoker roles/secretmanager.secretAccessor; do
-  gcloud projects add-iam-policy-binding "$GCP_PROJECT" --member="serviceAccount:$SA" --role="$role" --condition=None >/dev/null
+sleep 5  # a new service account can take a few seconds to become visible to IAM
+for role in roles/bigquery.jobUser roles/bigquery.dataEditor roles/run.invoker roles/secretmanager.secretAccessor; do
+  gcloud projects add-iam-policy-binding "$GCP_PROJECT" --member="serviceAccount:$SA" --role="$role" \
+    --condition=None --quiet --format=none
 done
-bq add-iam-policy-binding --member="serviceAccount:$SA" --role=roles/bigquery.dataEditor "$GCP_PROJECT:$DATASET" >/dev/null
-gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" --member="serviceAccount:$SA" --role=roles/storage.objectAdmin >/dev/null
+# storage access is scoped to this one bucket only
+gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" --member="serviceAccount:$SA" \
+  --role=roles/storage.objectAdmin --format=none
+
+echo "==> Cloud Build permissions"
+# New projects run Cloud Build as the default compute service account, which has no
+# permissions by default; give it the standard builder role so 'gcloud builds submit' works.
+PROJECT_NUMBER="$(gcloud projects describe "$GCP_PROJECT" --format='value(projectNumber)')"
+BUILD_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+gcloud projects add-iam-policy-binding "$GCP_PROJECT" --member="serviceAccount:$BUILD_SA" \
+  --role=roles/cloudbuild.builds.builder --condition=None --quiet --format=none
 
 echo "==> secrets"
 for secret in scan-api-key pii-salt; do
