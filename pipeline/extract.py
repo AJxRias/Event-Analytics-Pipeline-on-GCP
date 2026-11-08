@@ -52,7 +52,7 @@ class ScanApiClient:
     RETRYABLE = {429, 500, 502, 503, 504}
 
     def __init__(self, base_url: str, api_key: str, page_size: int = 5000,
-                 max_retries: int = 6, backoff: float = 0.5, timeout: float = 30.0,
+                 max_retries: int = 6, backoff: float = 1.0, timeout: float = 120.0,
                  session: requests.Session | None = None):
         self.base_url = base_url.rstrip("/")
         self.page_size = page_size
@@ -68,10 +68,10 @@ class ScanApiClient:
             self.stats["requests"] += 1
             try:
                 resp = self.session.get(f"{self.base_url}{path}", params=params, timeout=self.timeout)
-            except requests.ConnectionError as exc:
+            except (requests.ConnectionError, requests.Timeout) as exc:  # incl. slow cold starts
                 if attempt == self.max_retries:
                     raise ApiError(f"cannot reach scan API at {self.base_url}: {exc}") from exc
-                status, wait = None, self.backoff * 2 ** attempt
+                status, wait = type(exc).__name__, self.backoff * 2 ** attempt
             else:
                 if resp.status_code == 200:
                     return resp.json()

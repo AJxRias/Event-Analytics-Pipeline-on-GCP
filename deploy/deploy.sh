@@ -49,6 +49,12 @@ gcloud scheduler jobs "$ACTION" http event-pipeline-nightly --project "$GCP_PROJ
   --oauth-service-account-email "$SA"
 
 echo "==> first run"
-gcloud run jobs execute event-pipeline --project "$GCP_PROJECT" --region "$REGION" --wait
+if ! gcloud run jobs execute event-pipeline --project "$GCP_PROJECT" --region "$REGION" --wait; then
+  echo "==> job failed; last log lines:"
+  sleep 10  # logs arrive a few seconds after the container exits
+  gcloud logging read "resource.type=cloud_run_job AND resource.labels.job_name=event-pipeline" \
+    --project "$GCP_PROJECT" --freshness=30m --limit 40 --order=desc --format='value(textPayload)' | tac
+  exit 1
+fi
 
 echo "done. query it:  PIPELINE_TARGET=bigquery GCP_PROJECT=$GCP_PROJECT python scripts/run_queries.py"

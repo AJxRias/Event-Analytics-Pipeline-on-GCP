@@ -16,7 +16,8 @@ def api(tmp_path, monkeypatch):
     monkeypatch.setenv("MOCK_API_FAILURE_RATE", "0")
     import api.mock_scan_api as mod
     mod = importlib.reload(mod)
-    return TestClient(mod.app)
+    with TestClient(mod.app) as client:  # context manager runs the startup data load
+        yield client
 
 
 def test_requires_api_key(api):
