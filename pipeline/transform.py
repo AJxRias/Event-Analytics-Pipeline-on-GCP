@@ -23,7 +23,7 @@ from config import city_alias_map, series_for_tier
 
 log = logging.getLogger(__name__)
 
-PII_SALT = os.getenv("PII_SALT", "change-me-in-prod")
+PII_SALT = os.getenv("PII_SALT", "change-me-in-prod").strip()
 TEST_EMAIL_DOMAINS = ("example.com", "test.com", "mailinator.com")
 BOOTH_DUP_WINDOW_SECONDS = 120
 

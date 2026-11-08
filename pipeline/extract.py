@@ -60,7 +60,7 @@ class ScanApiClient:
         self.backoff = backoff
         self.timeout = timeout
         self.session = session or requests.Session()
-        self.session.headers.update({"X-API-Key": api_key, "User-Agent": "event-analytics-pipeline/1.0"})
+        self.session.headers.update({"X-API-Key": api_key.strip(), "User-Agent": "event-analytics-pipeline/1.0"})
         self.stats = {"requests": 0, "retries": 0}
 
     def _get(self, path: str, params: dict) -> dict:

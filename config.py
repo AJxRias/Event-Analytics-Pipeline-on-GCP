@@ -17,7 +17,7 @@ BQ_LOCATION = os.getenv("BQ_LOCATION", "asia-south1")  # Mumbai region
 GCS_BUCKET = os.getenv("GCS_BUCKET")  # staging bucket for parquet files (BigQuery target)
 
 SCAN_API_URL = os.getenv("SCAN_API_URL", "http://127.0.0.1:8000")
-SCAN_API_KEY = os.getenv("SCAN_API_KEY", "local-dev-key")
+SCAN_API_KEY = os.getenv("SCAN_API_KEY", "local-dev-key").strip()  # secrets often end in a newline
 SCAN_API_PAGE_SIZE = int(os.getenv("SCAN_API_PAGE_SIZE", "5000"))
 
 # Analytics dataset / schema name. The same name is used for the DuckDB schema so that

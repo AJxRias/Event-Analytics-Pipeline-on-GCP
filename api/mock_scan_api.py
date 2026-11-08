@@ -97,7 +97,7 @@ def list_scans(
     event_code: str | None = None,
     x_api_key: str | None = Header(default=None),
 ):
-    if x_api_key != os.getenv("SCAN_API_KEY", "local-dev-key"):
+    if (x_api_key or "").strip() != os.getenv("SCAN_API_KEY", "local-dev-key").strip():
         raise HTTPException(status_code=401, detail="missing or invalid API key")
 
     failure_rate = float(os.getenv("MOCK_API_FAILURE_RATE", "0.05"))

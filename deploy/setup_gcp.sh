@@ -52,7 +52,7 @@ gcloud projects add-iam-policy-binding "$GCP_PROJECT" --member="serviceAccount:$
 echo "==> secrets"
 for secret in scan-api-key pii-salt; do
   if ! gcloud secrets describe "$secret" >/dev/null 2>&1; then
-    openssl rand -hex 24 | gcloud secrets create "$secret" --data-file=- --replication-policy=automatic
+    openssl rand -hex 24 | tr -d '\n' | gcloud secrets create "$secret" --data-file=- --replication-policy=automatic
   fi
 done
 
