@@ -70,13 +70,20 @@ def run(target: str, raw_source: str, api_url: str, api_key: str) -> dict:
             "rows_loaded": json.dumps(rows), "dq_errors": sum(1 for d in dq if d["severity"] == "error" and not d["passed"]),
             "dq_warnings": sum(1 for d in dq if d["severity"] == "warning" and not d["passed"]), "error": error,
         }])
+        # fixed types: an all-empty column (e.g. error on a successful run) would otherwise
+        # be inferred as INTEGER and clash with the existing STRING column in BigQuery
+        run_row = run_row.astype({"run_id": "string", "status": "string", "target": "string",
+                                  "rows_loaded": "string", "error": "string",
+                                  "dq_errors": "int64", "dq_warnings": "int64", "duration_seconds": "float64"})
         try:
             loader.write("pipeline_runs", run_row, run_id)
             if dq:
                 dq_df = pd.DataFrame(dq)
                 dq_df.insert(0, "run_id", run_id)
-                loader.write("dq_results", dq_df[["run_id", "check_name", "table_name", "severity",
-                                                  "failed_rows", "passed", "detail"]], run_id)
+                dq_df = dq_df[["run_id", "check_name", "table_name", "severity", "failed_rows", "passed", "detail"]].astype(
+                    {"run_id": "string", "check_name": "string", "table_name": "string", "severity": "string",
+                     "failed_rows": "int64", "passed": "bool", "detail": "string"})
+                loader.write("dq_results", dq_df, run_id)
         finally:
             loader.close()
 
